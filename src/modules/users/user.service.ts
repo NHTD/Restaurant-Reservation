@@ -26,7 +26,7 @@ export class UserService {
         ...data, 
         password: hashedPassword
       } 
-      });
+    });
 
     return ApiResponse.ok(response, "Register successfully")
   }
