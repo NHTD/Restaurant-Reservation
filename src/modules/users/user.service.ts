@@ -21,24 +21,61 @@ export class UserService {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(data.password, salt);
 
+    const userRole = await this.prisma.role.findUnique({
+      where: { name: 'USER' },
+    });
+
+    if (!userRole) {
+      return ApiResponse.error(null, 'Default role "user" not found');
+    }
+
     const response = await this.prisma.user.create({ 
       data: { 
         ...data, 
-        password: hashedPassword
-      } 
+        password: hashedPassword,
+        roles: {
+          create: [{
+            role: {
+              connect: {id: userRole.id}
+            }
+          }]
+        },
+      },
+      include: {
+        roles: {
+          include: { role: true }
+        }
+      },
     });
 
-    return ApiResponse.ok(response, "Register successfully")
+    return ApiResponse.ok(response, "Register successfully");
   }
 
   async findAll() {
-    const response = await this.prisma.user.findMany()
+    const response = await this.prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        age: true,
+        address: true,
+      }
+    });
 
     return ApiResponse.ok(response)
   }
 
   async findOne(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        age: true,
+        address: true,
+      }
+    });
     if (!user) {
       return ApiResponse.error(null, "User not found");
     }
